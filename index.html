@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="לוח הדבקה">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#0f1115">
+<title>לוח הדבקה</title>
+<style>
+:root{--bg:#0f1115;--card:#1a1d24;--line:#2a2e38;--text:#eef0f4;--mute:#8b92a1;--acc:#4f8cff;--ok:#2ecc71;--warn:#ff5d5d}
+@media (prefers-color-scheme: light){:root{--bg:#f4f5f8;--card:#fff;--line:#e2e5ec;--text:#14161b;--mute:#6b7280;--acc:#2563eb}}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;background:var(--bg);color:var(--text);font-family:-apple-system,system-ui,"Segoe UI",Arial,sans-serif}
+body{padding:env(safe-area-inset-top) 16px calc(env(safe-area-inset-bottom) + 24px)}
+header{position:sticky;top:0;background:var(--bg);padding:14px 0 10px;z-index:5}
+h1{font-size:20px;margin:0 0 10px}
+.row{display:flex;gap:8px}
+button,input,textarea{font:inherit;color:inherit}
+.btn{flex:1;border:0;border-radius:12px;padding:14px;font-weight:600;background:var(--acc);color:#fff;cursor:pointer}
+.btn.sec{background:var(--card);border:1px solid var(--line);color:var(--text)}
+input[type=search]{width:100%;margin-top:8px;padding:12px;border-radius:12px;border:1px solid var(--line);background:var(--card);font-size:16px}
+textarea{width:100%;margin-top:8px;padding:12px;border-radius:12px;border:1px dashed var(--line);background:var(--card);font-size:16px;min-height:56px;resize:vertical}
+.item{display:flex;gap:8px;align-items:stretch;margin-top:8px;background:var(--card);border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.item.pin{border-color:var(--acc)}
+.txt{flex:1;padding:12px;white-space:pre-wrap;word-break:break-word;max-height:7.5em;overflow:hidden;font-size:16px;line-height:1.4;cursor:pointer;unicode-bidi:plaintext;text-align:start}
+.side{display:flex;flex-direction:column;border-inline-start:1px solid var(--line)}
+.side button{flex:1;border:0;background:transparent;padding:0 14px;font-size:18px;cursor:pointer;color:var(--mute)}
+.side button+button{border-top:1px solid var(--line)}
+.side .on{color:var(--acc)}
+.empty{color:var(--mute);text-align:center;margin-top:40px;line-height:1.6}
+.sec-title{color:var(--mute);font-size:13px;margin:16px 0 0}
+#toast{position:fixed;bottom:calc(env(safe-area-inset-bottom) + 24px);left:50%;transform:translateX(-50%) translateY(20px);background:var(--text);color:var(--bg);padding:10px 18px;border-radius:999px;opacity:0;transition:.2s;pointer-events:none;font-size:15px}
+#toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+.foot{display:flex;justify-content:space-between;margin-top:20px}
+.link{background:none;border:0;color:var(--mute);font-size:13px;padding:6px;cursor:pointer}
+</style>
+</head>
+<body>
+<header>
+  <h1>לוח הדבקה</h1>
+  <div class="row">
+    <button class="btn" id="pasteBtn">📋 הדבק מהלוח</button>
+    <button class="btn sec" id="manualBtn">✍️ ידני</button>
+  </div>
+  <textarea id="manual" placeholder="הדבק כאן (לחיצה ארוכה ← הדבק), ויישמר אוטומטית" hidden></textarea>
+  <input type="search" id="q" placeholder="חיפוש...">
+</header>
+
+<main id="list"></main>
+
+<div class="foot">
+  <button class="link" id="clearBtn">מחק הכל (חוץ מהמוצמדים)</button>
+  <span class="link" id="count"></span>
+</div>
+<div id="toast"></div>
+
+<script>
+(function(){
+  var KEY = 'clip-board-v1', MAX = 50;
+  var items = load();
+  var $ = function(id){return document.getElementById(id)};
+  var list = $('list'), q = $('q'), toastEl = $('toast'), toastT;
+
+  function load(){
+    try { return JSON.parse(localStorage.getItem(KEY)) || []; } catch(e){ return []; }
+  }
+  function save(){
+    try { localStorage.setItem(KEY, JSON.stringify(items)); } catch(e){}
+  }
+  function toast(msg){
+    toastEl.textContent = msg; toastEl.classList.add('show');
+    clearTimeout(toastT); toastT = setTimeout(function(){toastEl.classList.remove('show')}, 1400);
+  }
+  function uid(){ return Date.now().toString(36)+Math.random().toString(36).slice(2,6); }
+
+  function add(text){
+    text = (text||'').replace(/\s+$/,'');
+    if(!text.trim()) return false;
+    var ex = items.find(function(i){return i.t === text});
+    if(ex){ ex.ts = Date.now(); }
+    else { items.push({id:uid(), t:text, ts:Date.now(), pin:false}); }
+    trim(); save(); render();
+    return true;
+  }
+  function trim(){
+    var pinned = items.filter(function(i){return i.pin});
+    var rest = items.filter(function(i){return !i.pin}).sort(function(a,b){return b.ts-a.ts}).slice(0, MAX);
+    items = pinned.concat(rest);
+  }
+
+  // ההעתקה חייבת לרוץ סינכרונית בתוך אירוע לחיצה (דרישת iOS)
+  function copy(text){
+    var done = function(){ toast('הועתק ✓'); };
+    // שיטה 1: textarea + execCommand (הכי אמין ב-iOS, סינכרוני לגמרי)
+    var ok = false;
+    try {
+      var ta = document.createElement('textarea');
+      ta.value = text;
+      ta.setAttribute('readonly','');
+      ta.style.cssText = 'position:fixed;top:0;left:0;opacity:0;font-size:16px';
+      document.body.appendChild(ta);
+      ta.focus(); ta.select(); ta.setSelectionRange(0, text.length);
+      ok = document.execCommand('copy');
+      document.body.removeChild(ta);
+    } catch(e){}
+    if(ok){ done(); return; }
+    // שיטה 2: Clipboard API
+    if(navigator.clipboard && navigator.clipboard.writeText){
+      navigator.clipboard.writeText(text).then(done, function(){ toast('ההעתקה נכשלה'); });
+    } else toast('ההעתקה נכשלה');
+  }
+
+  function esc(s){ return s.replace(/[&<>"]/g, function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]}); }
+
+  function row(i){
+    return '<div class="item'+(i.pin?' pin':'')+'" data-id="'+i.id+'">' +
+      '<div class="txt" data-a="copy">'+esc(i.t)+'</div>' +
+      '<div class="side"><button data-a="pin" class="'+(i.pin?'on':'')+'" aria-label="הצמד">📌</button>' +
+      '<button data-a="del" aria-label="מחק">🗑</button></div></div>';
+  }
+
+  function render(){
+    var term = q.value.trim().toLowerCase();
+    var f = items.filter(function(i){return !term || i.t.toLowerCase().indexOf(term) > -1});
+    var pinned = f.filter(function(i){return i.pin}).sort(function(a,b){return b.ts-a.ts});
+    var recent = f.filter(function(i){return !i.pin}).sort(function(a,b){return b.ts-a.ts});
+    var html = '';
+    if(pinned.length) html += '<div class="sec-title">מוצמדים</div>' + pinned.map(row).join('');
+    if(recent.length) html += '<div class="sec-title">אחרונים</div>' + recent.map(row).join('');
+    if(!html) html = '<div class="empty">'+(items.length ? 'לא נמצאו תוצאות' : 'עדיין ריק.<br>העתק משהו באייפון, פתח את הדף<br>ולחץ "הדבק מהלוח".')+'</div>';
+    list.innerHTML = html;
+    $('count').textContent = items.length + ' פריטים';
+  }
+
+  list.addEventListener('click', function(e){
+    var btn = e.target.closest('[data-a]'); if(!btn) return;
+    var id = btn.closest('.item').getAttribute('data-id');
+    var it = items.find(function(i){return i.id === id}); if(!it) return;
+    var a = btn.getAttribute('data-a');
+    if(a === 'copy'){ copy(it.t); it.ts = Date.now(); save(); }
+    else if(a === 'pin'){ it.pin = !it.pin; save(); render(); }
+    else if(a === 'del'){ items = items.filter(function(i){return i.id !== id}); save(); render(); }
+  });
+
+  $('pasteBtn').addEventListener('click', function(){
+    if(navigator.clipboard && navigator.clipboard.readText){
+      navigator.clipboard.readText().then(function(t){
+        if(add(t)) toast('נשמר ✓'); else toast('הלוח ריק');
+      }, function(){
+        toast('אשר "הדבק" או השתמש ב"ידני"');
+        showManual();
+      });
+    } else showManual();
+  });
+
+  function showManual(){
+    var m = $('manual'); m.hidden = false; m.focus();
+  }
+  $('manualBtn').addEventListener('click', function(){
+    var m = $('manual'); m.hidden = !m.hidden; if(!m.hidden) m.focus();
+  });
+  $('manual').addEventListener('input', function(){
+    var m = this;
+    if(m.value.trim()){ add(m.value); m.value = ''; toast('נשמר ✓'); }
+  });
+
+  q.addEventListener('input', render);
+  $('clearBtn').addEventListener('click', function(){
+    if(!confirm('למחוק את כל הפריטים שאינם מוצמדים?')) return;
+    items = items.filter(function(i){return i.pin}); save(); render();
+  });
+
+  // כשחוזרים לדף מאפליקציה אחרת, אפשר לנסות לקלוט אוטומטית (iOS ישאל אישור)
+  render();
+})();
+</script>
+</body>
+</html>
