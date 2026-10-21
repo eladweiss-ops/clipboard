@@ -7,174 +7,662 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="לוח הדבקה">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="theme-color" content="#0f1115">
+<meta name="theme-color" content="#0b0d14" id="themeColor">
+<meta name="color-scheme" content="dark light">
+<meta name="format-detection" content="telephone=no">
 <title>לוח הדבקה</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="icon" type="image/svg+xml" href="favicon.svg">
 <style>
-:root{--bg:#0f1115;--card:#1a1d24;--line:#2a2e38;--text:#eef0f4;--mute:#8b92a1;--acc:#4f8cff;--ok:#2ecc71;--warn:#ff5d5d}
-@media (prefers-color-scheme: light){:root{--bg:#f4f5f8;--card:#fff;--line:#e2e5ec;--text:#14161b;--mute:#6b7280;--acc:#2563eb}}
+:root{
+  --bg:#0b0d14; --bg2:#10131c; --card:#161a25; --card2:#1c2130; --line:rgba(255,255,255,.08);
+  --text:#f1f3f9; --mute:#8d95a8; --acc:#5b8cff; --acc2:#9b5cff; --ok:#34d399; --warn:#ff6b6b;
+  --glass:rgba(16,19,28,.72); --shadow:0 10px 30px rgba(0,0,0,.35);
+  --grad:linear-gradient(135deg,#3b82ff 0%,#6d5dfc 55%,#b05cff 100%);
+  --r:18px;
+}
+@media (prefers-color-scheme: light){
+  :root:not([data-theme="dark"]){
+    --bg:#f3f4fa; --bg2:#eceef7; --card:#ffffff; --card2:#f5f6fb; --line:rgba(20,24,50,.08);
+    --text:#14172b; --mute:#6a7088; --glass:rgba(243,244,250,.78); --shadow:0 10px 30px rgba(40,50,110,.12);
+  }
+}
+:root[data-theme="light"]{
+  --bg:#f3f4fa; --bg2:#eceef7; --card:#ffffff; --card2:#f5f6fb; --line:rgba(20,24,50,.08);
+  --text:#14172b; --mute:#6a7088; --glass:rgba(243,244,250,.78); --shadow:0 10px 30px rgba(40,50,110,.12);
+}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-html,body{margin:0;background:var(--bg);color:var(--text);font-family:-apple-system,system-ui,"Segoe UI",Arial,sans-serif}
-body{padding:env(safe-area-inset-top) 16px calc(env(safe-area-inset-bottom) + 24px)}
-header{position:sticky;top:0;background:var(--bg);padding:14px 0 10px;z-index:5}
-h1{font-size:20px;margin:0 0 10px}
-.row{display:flex;gap:8px}
-button,input,textarea{font:inherit;color:inherit}
-.btn{flex:1;border:0;border-radius:12px;padding:14px;font-weight:600;background:var(--acc);color:#fff;cursor:pointer}
-.btn.sec{background:var(--card);border:1px solid var(--line);color:var(--text)}
-input[type=search]{width:100%;margin-top:8px;padding:12px;border-radius:12px;border:1px solid var(--line);background:var(--card);font-size:16px}
-textarea{width:100%;margin-top:8px;padding:12px;border-radius:12px;border:1px dashed var(--line);background:var(--card);font-size:16px;min-height:56px;resize:vertical}
-.item{display:flex;gap:8px;align-items:stretch;margin-top:8px;background:var(--card);border:1px solid var(--line);border-radius:12px;overflow:hidden}
-.item.pin{border-color:var(--acc)}
-.txt{flex:1;padding:12px;white-space:pre-wrap;word-break:break-word;max-height:7.5em;overflow:hidden;font-size:16px;line-height:1.4;cursor:pointer;unicode-bidi:plaintext;text-align:start}
-.side{display:flex;flex-direction:column;border-inline-start:1px solid var(--line)}
-.side button{flex:1;border:0;background:transparent;padding:0 14px;font-size:18px;cursor:pointer;color:var(--mute)}
-.side button+button{border-top:1px solid var(--line)}
-.side .on{color:var(--acc)}
-.empty{color:var(--mute);text-align:center;margin-top:40px;line-height:1.6}
-.sec-title{color:var(--mute);font-size:13px;margin:16px 0 0}
-#toast{position:fixed;bottom:calc(env(safe-area-inset-bottom) + 24px);left:50%;transform:translateX(-50%) translateY(20px);background:var(--text);color:var(--bg);padding:10px 18px;border-radius:999px;opacity:0;transition:.2s;pointer-events:none;font-size:15px}
-#toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
-.foot{display:flex;justify-content:space-between;margin-top:20px}
-.link{background:none;border:0;color:var(--mute);font-size:13px;padding:6px;cursor:pointer}
+html{background:var(--bg);-webkit-text-size-adjust:100%}
+body{
+  margin:0;min-height:100dvh;color:var(--text);
+  font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",Arial,sans-serif;
+  background:
+    radial-gradient(120% 60% at 100% -10%,rgba(91,140,255,.22),transparent 60%),
+    radial-gradient(90% 50% at 0% 0%,rgba(155,92,255,.18),transparent 60%),
+    var(--bg);
+  background-attachment:fixed;
+  padding-bottom:calc(env(safe-area-inset-bottom) + 40px);
+  -webkit-user-select:none;user-select:none;
+  overscroll-behavior-y:none;
+}
+button,input,textarea{font:inherit;color:inherit;-webkit-appearance:none;appearance:none}
+button{cursor:pointer;border:0;background:none;padding:0}
+svg.i{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex:none}
+.wrap{max-width:640px;margin:0 auto;padding:0 16px}
+
+/* Header */
+header.top{
+  position:sticky;top:0;z-index:20;
+  padding:calc(env(safe-area-inset-top) + 10px) 16px 10px;
+  background:var(--glass);-webkit-backdrop-filter:saturate(180%) blur(22px);backdrop-filter:saturate(180%) blur(22px);
+  border-bottom:1px solid transparent;transition:border-color .2s;
+}
+header.top.scrolled{border-bottom-color:var(--line)}
+.bar{max-width:640px;margin:0 auto;display:flex;align-items:center;gap:12px}
+.logo{width:40px;height:40px;border-radius:12px;box-shadow:0 6px 16px rgba(91,92,255,.35)}
+.ttl{flex:1;min-width:0}
+.ttl h1{margin:0;font-size:20px;font-weight:800;letter-spacing:-.2px}
+.ttl small{display:block;color:var(--mute);font-size:12.5px;margin-top:1px}
+.iconbtn{width:42px;height:42px;border-radius:14px;display:grid;place-items:center;background:var(--card);border:1px solid var(--line);color:var(--text);transition:transform .15s,background .2s}
+.iconbtn:active{transform:scale(.92)}
+
+/* Hero */
+.hero{display:flex;gap:10px;margin:14px 0 0}
+.paste{
+  flex:1;position:relative;overflow:hidden;border-radius:20px;padding:16px 18px;
+  display:flex;align-items:center;gap:14px;text-align:start;color:#fff;
+  background:var(--grad);box-shadow:0 14px 34px rgba(98,92,255,.38),inset 0 1px 0 rgba(255,255,255,.35);
+  transition:transform .18s cubic-bezier(.2,.8,.2,1),box-shadow .2s;
+}
+.paste:active{transform:scale(.975)}
+.paste::after{content:"";position:absolute;inset:0;background:linear-gradient(120deg,transparent 30%,rgba(255,255,255,.28) 50%,transparent 70%);transform:translateX(120%);animation:shine 5s ease-in-out infinite}
+@keyframes shine{0%,60%{transform:translateX(120%)}100%{transform:translateX(-120%)}}
+.paste .pi{width:46px;height:46px;border-radius:15px;background:rgba(255,255,255,.2);display:grid;place-items:center;flex:none}
+.paste .pi svg{width:26px;height:26px}
+.paste b{display:block;font-size:18px;font-weight:800;letter-spacing:-.2px}
+.paste span{display:block;font-size:13px;opacity:.85;margin-top:2px}
+.kbd{width:64px;border-radius:20px;background:var(--card);border:1px solid var(--line);display:grid;place-items:center;color:var(--text);transition:transform .15s}
+.kbd:active{transform:scale(.94)}
+
+/* Banner */
+.banner{margin:14px 0 0;padding:14px;border-radius:var(--r);background:var(--card);border:1px solid var(--line);display:flex;gap:12px;align-items:flex-start;animation:rise .4s both}
+.banner .bi{width:38px;height:38px;border-radius:12px;background:var(--grad);display:grid;place-items:center;color:#fff;flex:none}
+.banner p{margin:0;font-size:14px;line-height:1.5}
+.banner p b{display:block;font-size:15px;margin-bottom:2px}
+.banner .x{margin-inline-start:auto;color:var(--mute);width:30px;height:30px;display:grid;place-items:center}
+
+/* Search + chips */
+.search{position:relative;margin:16px 0 0}
+.search svg{position:absolute;inset-inline-start:14px;top:50%;transform:translateY(-50%);color:var(--mute);width:20px;height:20px}
+.search input{
+  width:100%;height:46px;border-radius:14px;border:1px solid var(--line);background:var(--card);
+  padding-inline:44px 14px;font-size:16px;outline:none;-webkit-user-select:text;user-select:text;transition:border-color .2s,box-shadow .2s;
+}
+.search input:focus{border-color:var(--acc);box-shadow:0 0 0 4px rgba(91,140,255,.18)}
+.search input::placeholder{color:var(--mute)}
+.chips{display:flex;gap:8px;overflow-x:auto;padding:12px 16px;margin:0 -16px;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+.chips::-webkit-scrollbar{display:none}
+.chip{flex:none;height:34px;padding:0 14px;border-radius:999px;font-size:14px;font-weight:600;color:var(--mute);background:var(--card);border:1px solid var(--line);display:flex;align-items:center;gap:6px;transition:all .2s}
+.chip svg{width:15px;height:15px}
+.chip.on{color:#fff;background:var(--grad);border-color:transparent;box-shadow:0 6px 16px rgba(98,92,255,.35)}
+.chip em{font-style:normal;opacity:.7;font-weight:700;font-size:12.5px}
+
+/* List */
+.sec{display:flex;align-items:center;gap:8px;margin:16px 4px 8px;color:var(--mute);font-size:13px;font-weight:700;letter-spacing:.3px}
+.sec svg{width:15px;height:15px}
+.card{
+  position:relative;display:flex;align-items:stretch;gap:0;margin:0 0 10px;border-radius:var(--r);
+  background:var(--card);border:1px solid var(--line);box-shadow:0 1px 0 rgba(255,255,255,.03) inset;overflow:hidden;
+  animation:rise .35s both;transition:transform .18s cubic-bezier(.2,.8,.2,1),border-color .25s,background .25s;
+}
+.card:active{transform:scale(.985)}
+.card.pin{border-color:rgba(91,140,255,.45);background:linear-gradient(180deg,rgba(91,140,255,.10),transparent 70%),var(--card)}
+.card.copied{border-color:var(--ok);background:linear-gradient(180deg,rgba(52,211,153,.16),transparent 80%),var(--card)}
+@keyframes rise{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+.main{flex:1;min-width:0;display:flex;gap:12px;align-items:flex-start;padding:14px 14px;text-align:start}
+.badge{width:40px;height:40px;border-radius:13px;display:grid;place-items:center;flex:none;color:#fff;transition:transform .3s cubic-bezier(.3,1.6,.5,1)}
+.badge svg{width:20px;height:20px}
+.card.copied .badge{background:var(--ok)!important;transform:scale(1.1) rotate(-6deg)}
+.t-link .badge{background:linear-gradient(135deg,#3b82ff,#22b8ff)}
+.t-phone .badge{background:linear-gradient(135deg,#10b981,#34d399)}
+.t-email .badge{background:linear-gradient(135deg,#f97316,#fbbf24)}
+.t-number .badge{background:linear-gradient(135deg,#a855f7,#d946ef)}
+.t-code .badge{background:linear-gradient(135deg,#475569,#64748b)}
+.t-text .badge{background:linear-gradient(135deg,#6d5dfc,#8b7bff)}
+.body{flex:1;min-width:0}
+.txt{font-size:16px;line-height:1.45;word-break:break-word;overflow:hidden;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;white-space:pre-wrap;unicode-bidi:plaintext;text-align:start}
+.t-link .txt{direction:ltr;text-align:left;-webkit-line-clamp:2;color:var(--acc)}
+.t-link .txt b{color:var(--text);font-weight:700}
+.t-code .txt,.t-number .txt,.t-phone .txt,.t-email .txt{direction:ltr;text-align:left}
+.t-code .txt{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:13.5px}
+.meta{margin-top:6px;font-size:12.5px;color:var(--mute);display:flex;gap:8px;align-items:center}
+.meta i{width:3px;height:3px;border-radius:50%;background:var(--mute);opacity:.6}
+.acts{display:flex;flex-direction:column;border-inline-start:1px solid var(--line)}
+.acts button{flex:1;width:48px;display:grid;place-items:center;color:var(--mute);transition:color .2s,background .2s}
+.acts button+button{border-top:1px solid var(--line)}
+.acts button:active{background:var(--card2)}
+.acts .on{color:var(--acc)}
+.acts .on svg{fill:currentColor}
+
+/* Empty */
+.empty{text-align:center;padding:36px 12px 10px;color:var(--mute);animation:rise .5s both}
+.empty .art{display:block;width:132px;height:132px;border-radius:30px;margin:0 auto 18px;filter:drop-shadow(0 18px 30px rgba(98,92,255,.35))}
+.empty h2{margin:0 0 6px;color:var(--text);font-size:20px}
+.empty p{margin:0 auto;max-width:300px;line-height:1.6;font-size:15px}
+.steps{display:grid;gap:10px;margin:22px auto 0;max-width:340px;text-align:start}
+.steps div{display:flex;gap:12px;align-items:center;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px 14px;font-size:14.5px;color:var(--text)}
+.steps b{width:26px;height:26px;border-radius:50%;background:var(--grad);color:#fff;display:grid;place-items:center;font-size:13px;flex:none}
+
+/* Sheet */
+#overlay{position:fixed;inset:0;z-index:50;background:rgba(5,7,14,.55);opacity:0;pointer-events:none;transition:opacity .25s;-webkit-backdrop-filter:blur(3px);backdrop-filter:blur(3px)}
+#overlay.show{opacity:1;pointer-events:auto}
+#sheet{
+  position:fixed;left:0;right:0;bottom:0;z-index:60;max-width:640px;margin:0 auto;max-height:88dvh;overflow:auto;
+  background:var(--bg2);border:1px solid var(--line);border-bottom:0;border-radius:26px 26px 0 0;
+  padding:8px 16px calc(env(safe-area-inset-bottom) + 18px);transform:translateY(105%);transition:transform .38s cubic-bezier(.2,.9,.25,1);
+}
+#sheet.show{transform:none;box-shadow:0 -20px 50px rgba(0,0,0,.4)}
+.grab{width:40px;height:5px;border-radius:3px;background:var(--line);margin:4px auto 14px;filter:brightness(1.8)}
+.sh-h{display:flex;align-items:center;gap:10px;margin:0 2px 14px}
+.sh-h h3{margin:0;font-size:19px;flex:1}
+.sh-prev{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px 14px;font-size:15px;line-height:1.5;margin-bottom:12px;max-height:110px;overflow:hidden;white-space:pre-wrap;word-break:break-word;unicode-bidi:plaintext;text-align:start;color:var(--mute)}
+.list{background:var(--card);border:1px solid var(--line);border-radius:16px;overflow:hidden}
+.row{display:flex;align-items:center;gap:14px;width:100%;padding:15px 16px;font-size:16px;text-align:start;transition:background .15s}
+.row+.row{border-top:1px solid var(--line)}
+.row:active{background:var(--card2)}
+.row svg{color:var(--acc)}
+.row.danger{color:var(--warn)}.row.danger svg{color:var(--warn)}
+.row small{margin-inline-start:auto;color:var(--mute);font-size:13px}
+.seg{display:flex;background:var(--card2);border-radius:12px;padding:3px;margin-inline-start:auto;gap:2px}
+.seg button{padding:7px 13px;border-radius:9px;font-size:14px;font-weight:600;color:var(--mute);transition:all .2s}
+.seg button.on{background:var(--grad);color:#fff;box-shadow:0 4px 12px rgba(98,92,255,.35)}
+.sw{margin-inline-start:auto;width:52px;height:32px;border-radius:999px;background:var(--card2);border:1px solid var(--line);position:relative;transition:background .25s}
+.sw::after{content:"";position:absolute;top:3px;inset-inline-start:3px;width:24px;height:24px;border-radius:50%;background:#fff;box-shadow:0 2px 6px rgba(0,0,0,.35);transition:transform .25s cubic-bezier(.3,1.4,.5,1)}
+.sw.on{background:var(--ok);border-color:transparent}
+.sw.on::after{transform:translateX(-20px)}
+.label{margin:18px 6px 8px;color:var(--mute);font-size:13px;font-weight:700}
+.note{margin:8px 6px 0;color:var(--mute);font-size:13px;line-height:1.5}
+textarea.big{width:100%;min-height:130px;border-radius:14px;border:1px solid var(--line);background:var(--card);padding:14px;font-size:16px;outline:none;resize:none;-webkit-user-select:text;user-select:text;unicode-bidi:plaintext;text-align:start}
+textarea.big:focus{border-color:var(--acc);box-shadow:0 0 0 4px rgba(91,140,255,.18)}
+.cta{width:100%;margin-top:12px;height:52px;border-radius:16px;color:#fff;font-weight:800;font-size:17px;background:var(--grad);box-shadow:0 10px 24px rgba(98,92,255,.35);transition:transform .15s}
+.cta:active{transform:scale(.97)}
+.cta.sec2{background:var(--card);color:var(--text);box-shadow:none;border:1px solid var(--line)}
+
+/* Toast */
+#toast{
+  position:fixed;left:50%;bottom:calc(env(safe-area-inset-bottom) + 24px);z-index:80;transform:translate(-50%,30px) scale(.96);opacity:0;pointer-events:none;
+  display:flex;align-items:center;gap:12px;padding:12px 18px;border-radius:999px;font-size:15px;font-weight:600;
+  background:var(--text);color:var(--bg);box-shadow:0 14px 34px rgba(0,0,0,.4);transition:all .3s cubic-bezier(.2,.9,.25,1);white-space:nowrap;
+}
+#toast.show{opacity:1;transform:translate(-50%,0) scale(1);pointer-events:auto}
+#toast svg{width:18px;height:18px;color:var(--ok)}
+#toast button{color:var(--acc);font-weight:800;padding:2px 4px}
+.foot{text-align:center;color:var(--mute);font-size:12.5px;margin:20px 0 0}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 </style>
 </head>
 <body>
-<header>
-  <h1>לוח הדבקה</h1>
-  <div class="row">
-    <button class="btn" id="pasteBtn">📋 הדבק מהלוח</button>
-    <button class="btn sec" id="manualBtn">✍️ ידני</button>
+
+<header class="top" id="top">
+  <div class="bar">
+    <img class="logo" src="icon-180.png" alt="">
+    <div class="ttl"><h1>לוח הדבקה</h1><small id="sub">&nbsp;</small></div>
+    <button class="iconbtn" data-a="settings" aria-label="הגדרות"><svg class="i" viewBox="0 0 24 24" id="i-settings"></svg></button>
   </div>
-  <textarea id="manual" placeholder="הדבק כאן (לחיצה ארוכה ← הדבק), ויישמר אוטומטית" hidden></textarea>
-  <input type="search" id="q" placeholder="חיפוש...">
 </header>
 
-<main id="list"></main>
+<div class="wrap">
+  <div id="bannerSlot"></div>
 
-<div class="foot">
-  <button class="link" id="clearBtn">מחק הכל (חוץ מהמוצמדים)</button>
-  <span class="link" id="count"></span>
+  <div class="hero">
+    <button class="paste" data-a="paste">
+      <div class="pi"><svg class="i" viewBox="0 0 24 24" data-ic="clipboard"></svg></div>
+      <div><b>הדבק מהלוח</b><span>שמור את מה שהעתקת עכשיו</span></div>
+    </button>
+    <button class="kbd" data-a="manual" aria-label="כתיבה ידנית"><svg class="i" viewBox="0 0 24 24" data-ic="plus"></svg></button>
+  </div>
+
+  <div class="search">
+    <svg class="i" viewBox="0 0 24 24" data-ic="search"></svg>
+    <input type="search" id="q" placeholder="חיפוש בהיסטוריה" enterkeyhint="search" autocomplete="off" autocapitalize="off" spellcheck="false">
+  </div>
+  <div class="chips" id="chips"></div>
+
+  <main id="list"></main>
+  <div class="foot" id="foot"></div>
 </div>
+
+<div id="overlay" data-a="close"></div>
+<div id="sheet" role="dialog" aria-modal="true"><div class="grab"></div><div id="sheetBody"></div></div>
 <div id="toast"></div>
 
 <script>
 (function(){
-  var KEY = 'clip-board-v1', MAX = 50;
-  var items = load();
-  var $ = function(id){return document.getElementById(id)};
-  var list = $('list'), q = $('q'), toastEl = $('toast'), toastT;
+'use strict';
 
-  function load(){
-    try { return JSON.parse(localStorage.getItem(KEY)) || []; } catch(e){ return []; }
-  }
-  function save(){
-    try { localStorage.setItem(KEY, JSON.stringify(items)); } catch(e){}
-  }
-  function toast(msg){
-    toastEl.textContent = msg; toastEl.classList.add('show');
-    clearTimeout(toastT); toastT = setTimeout(function(){toastEl.classList.remove('show')}, 1400);
-  }
-  function uid(){ return Date.now().toString(36)+Math.random().toString(36).slice(2,6); }
+/* ---------- Icons ---------- */
+var IC = {
+  clipboard:'<rect x="8" y="2" width="8" height="4" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/>',
+  search:'<circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>',
+  pin:'<path d="M12 17v5"/><path d="M9 10.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24V16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V7a1 1 0 0 1 1-1 2 2 0 0 0 0-4H8a2 2 0 0 0 0 4 1 1 0 0 1 1 1z"/>',
+  trash:'<path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>',
+  edit:'<path d="M12 20h9"/><path d="M16.376 3.622a1 1 0 0 1 3.002 3.002L7.368 18.635a2 2 0 0 1-.855.506l-2.872.838a.5.5 0 0 1-.62-.62l.838-2.872a2 2 0 0 1 .506-.854z"/>',
+  share:'<path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><path d="m16 6-4-4-4 4"/><path d="M12 2v13"/>',
+  copy:'<rect x="8" y="8" width="14" height="14" rx="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/>',
+  link:'<path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>',
+  phone:'<path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/>',
+  mail:'<rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/>',
+  number:'<line x1="4" x2="20" y1="9" y2="9"/><line x1="4" x2="20" y1="15" y2="15"/><line x1="10" x2="8" y1="3" y2="21"/><line x1="16" x2="14" y1="3" y2="21"/>',
+  code:'<polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/>',
+  text:'<line x1="21" x2="3" y1="6" y2="6"/><line x1="15" x2="3" y1="12" y2="12"/><line x1="17" x2="3" y1="18" y2="18"/>',
+  settings:'<line x1="4" x2="4" y1="21" y2="14"/><line x1="4" x2="4" y1="10" y2="3"/><line x1="12" x2="12" y1="21" y2="12"/><line x1="12" x2="12" y1="8" y2="3"/><line x1="20" x2="20" y1="21" y2="16"/><line x1="20" x2="20" y1="12" y2="3"/><line x1="2" x2="6" y1="14" y2="14"/><line x1="10" x2="14" y1="8" y2="8"/><line x1="18" x2="22" y1="16" y2="16"/>',
+  check:'<path d="M20 6 9 17l-5-5"/>',
+  download:'<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/>',
+  upload:'<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" x2="12" y1="3" y2="15"/>',
+  external:'<path d="M15 3h6v6"/><path d="M10 14 21 3"/><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>',
+  plus:'<path d="M12 5v14M5 12h14"/>',
+  x:'<path d="M18 6 6 18M6 6l12 12"/>',
+  moon:'<path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/>',
+  zap:'<path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"/>',
+  layers:'<path d="m12 2 10 5-10 5L2 7l10-5Z"/><path d="m2 12 10 5 10-5"/><path d="m2 17 10 5 10-5"/>',
+  more:'<circle cx="12" cy="5" r="1.6" fill="currentColor"/><circle cx="12" cy="12" r="1.6" fill="currentColor"/><circle cx="12" cy="19" r="1.6" fill="currentColor"/>',
+  all:'<rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/>'
+};
+function svg(n,cls){ return '<svg class="i '+(cls||'')+'" viewBox="0 0 24 24">'+(IC[n]||'')+'</svg>'; }
+function hydrateIcons(root){
+  (root||document).querySelectorAll('svg[data-ic]').forEach(function(s){ s.innerHTML = IC[s.getAttribute('data-ic')] || ''; });
+  var st = document.getElementById('i-settings'); if(st) st.innerHTML = IC.settings;
+}
 
-  function add(text){
-    text = (text||'').replace(/\s+$/,'');
-    if(!text.trim()) return false;
-    var ex = items.find(function(i){return i.t === text});
-    if(ex){ ex.ts = Date.now(); }
-    else { items.push({id:uid(), t:text, ts:Date.now(), pin:false}); }
-    trim(); save(); render();
+/* ---------- State ---------- */
+var KEY = 'clip-board-v1', SKEY = 'clip-settings-v1';
+var settings = Object.assign({theme:'auto', max:50, auto:false, hint:false}, readJSON(SKEY, {}));
+var items = readJSON(KEY, []);
+if(!Array.isArray(items)) items = [];
+var filter = 'all', query = '', current = null, lastDeleted = null, toastT = null, copiedId = null;
+var $ = function(id){ return document.getElementById(id); };
+var listEl = $('list'), chipsEl = $('chips'), sheet = $('sheet'), sheetBody = $('sheetBody'), overlay = $('overlay'), toastEl = $('toast');
+
+function readJSON(k, d){ try { var v = JSON.parse(localStorage.getItem(k)); return v == null ? d : v; } catch(e){ return d; } }
+function writeJSON(k, v){ try { localStorage.setItem(k, JSON.stringify(v)); } catch(e){} }
+function save(){ writeJSON(KEY, items); }
+function saveSettings(){ writeJSON(SKEY, settings); }
+function uid(){ return Date.now().toString(36) + Math.random().toString(36).slice(2,6); }
+function esc(s){ return String(s).replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
+function byId(id){ return items.find(function(i){ return i.id === id; }); }
+
+/* ---------- Type detection ---------- */
+var TYPES = {
+  link:  {label:'קישורים', one:'קישור', ic:'link'},
+  phone: {label:'טלפונים', one:'טלפון', ic:'phone'},
+  email: {label:'מיילים',  one:'מייל',  ic:'mail'},
+  number:{label:'מספרים',  one:'מספר',  ic:'number'},
+  code:  {label:'קוד',     one:'קוד',   ic:'code'},
+  text:  {label:'טקסט',    one:'טקסט',  ic:'text'}
+};
+function detect(t){
+  var s = t.trim();
+  if(/^(https?:\/\/|www\.)\S+$/i.test(s)) return 'link';
+  if(/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(s)) return 'email';
+  var digits = s.replace(/\D/g,'');
+  if(/^[+()\d\s.\-]{7,20}$/.test(s) && digits.length >= 7 && digits.length <= 15 && /^(\+|0)/.test(s)) return 'phone';
+  if(/^-?[\d.,\s]+$/.test(s) && /\d/.test(s)) return 'number';
+  if(/[{};]|=>|<\/?[a-z][^>]*>|^\s*(function|const|let|var|import|def|class|SELECT|INSERT)\b/m.test(s) && /[\n{;}]/.test(s)) return 'code';
+  return 'text';
+}
+function linkUrl(t){ t = t.trim(); return /^https?:\/\//i.test(t) ? t : 'https://' + t; }
+function hostOf(t){ try { var u = new URL(linkUrl(t)); return {h:u.host.replace(/^www\./,''), r:(u.pathname + u.search + u.hash).replace(/^\/$/,'')}; } catch(e){ return {h:t, r:''}; } }
+
+function ago(ts){
+  var d = (Date.now() - ts) / 1000;
+  if(d < 45) return 'עכשיו';
+  if(d < 3600) return 'לפני ' + Math.round(d/60) + ' דק׳';
+  if(d < 86400){ var h = Math.round(d/3600); return h === 1 ? 'לפני שעה' : 'לפני ' + h + ' שע׳'; }
+  if(d < 172800) return 'אתמול';
+  if(d < 604800) return 'לפני ' + Math.floor(d/86400) + ' ימים';
+  return new Date(ts).toLocaleDateString('he-IL', {day:'numeric', month:'short'});
+}
+
+/* ---------- Core ops ---------- */
+function trim(){
+  var pinned = items.filter(function(i){ return i.pin; });
+  var rest = items.filter(function(i){ return !i.pin; }).sort(function(a,b){ return b.ts - a.ts; }).slice(0, settings.max);
+  items = pinned.concat(rest);
+}
+function add(text){
+  text = (text || '').replace(/\s+$/, '').replace(/^\n+/, '');
+  if(!text.trim()) return 'empty';
+  var ex = items.find(function(i){ return i.t === text; });
+  if(ex){ ex.ts = Date.now(); save(); render(); return 'bumped'; }
+  items.push({id: uid(), t: text, ts: Date.now(), pin: false});
+  trim(); save(); render();
+  return 'added';
+}
+
+function copyText(text){
+  var ok = false;
+  try {
+    var ta = document.createElement('textarea');
+    ta.value = text; ta.setAttribute('readonly','');
+    ta.style.cssText = 'position:fixed;top:0;left:0;opacity:0;font-size:16px;-webkit-user-select:text;user-select:text';
+    document.body.appendChild(ta);
+    ta.focus(); ta.select(); ta.setSelectionRange(0, text.length);
+    ok = document.execCommand('copy');
+    document.body.removeChild(ta);
+  } catch(e){}
+  if(ok) return Promise.resolve(true);
+  if(navigator.clipboard && navigator.clipboard.writeText) return navigator.clipboard.writeText(text).then(function(){ return true; }, function(){ return false; });
+  return Promise.resolve(false);
+}
+function doCopy(it){
+  var p = copyText(it.t);   // חייב להיקרא סינכרונית בתוך לחיצה (דרישת iOS)
+  it.ts = Date.now(); save();
+  copiedId = it.id;
+  var card = listEl.querySelector('[data-id="'+it.id+'"]');
+  if(card){ card.classList.add('copied'); var b = card.querySelector('.badge'); if(b) b.innerHTML = svg('check'); }
+  p.then(function(ok){ toast(ok ? 'הועתק, אפשר להדביק' : 'ההעתקה נכשלה', ok ? 'check' : null); });
+  setTimeout(function(){ copiedId = null; render(); }, 1100);
+}
+
+/* ---------- Render ---------- */
+function typeOf(i){ return detect(i.t); }
+
+function render(){
+  // chips
+  var counts = {}, pinCount = 0;
+  items.forEach(function(i){ var t = typeOf(i); counts[t] = (counts[t]||0) + 1; if(i.pin) pinCount++; });
+  var chips = '<button class="chip '+(filter==='all'?'on':'')+'" data-a="filter" data-v="all">'+svg('all')+'הכל <em>'+items.length+'</em></button>';
+  if(pinCount) chips += '<button class="chip '+(filter==='pin'?'on':'')+'" data-a="filter" data-v="pin">'+svg('pin')+'מוצמדים <em>'+pinCount+'</em></button>';
+  Object.keys(TYPES).forEach(function(k){
+    if(counts[k]) chips += '<button class="chip '+(filter===k?'on':'')+'" data-a="filter" data-v="'+k+'">'+svg(TYPES[k].ic)+TYPES[k].label+' <em>'+counts[k]+'</em></button>';
+  });
+  if(filter !== 'all' && filter !== 'pin' && !counts[filter]) filter = 'all';
+  if(filter === 'pin' && !pinCount) filter = 'all';
+  chipsEl.style.display = items.length ? '' : 'none';
+  $('q').parentNode.style.display = items.length ? '' : 'none';
+  chipsEl.innerHTML = chips;
+
+  $('sub').textContent = items.length ? items.length + ' פריטים שמורים' : 'ההיסטוריה שלך תופיע כאן';
+
+  // filter list
+  var term = query.trim().toLowerCase();
+  var f = items.filter(function(i){
+    if(term && i.t.toLowerCase().indexOf(term) === -1) return false;
+    if(filter === 'pin') return i.pin;
+    if(filter !== 'all') return typeOf(i) === filter;
     return true;
-  }
-  function trim(){
-    var pinned = items.filter(function(i){return i.pin});
-    var rest = items.filter(function(i){return !i.pin}).sort(function(a,b){return b.ts-a.ts}).slice(0, MAX);
-    items = pinned.concat(rest);
-  }
-
-  // ההעתקה חייבת לרוץ סינכרונית בתוך אירוע לחיצה (דרישת iOS)
-  function copy(text){
-    var done = function(){ toast('הועתק ✓'); };
-    // שיטה 1: textarea + execCommand (הכי אמין ב-iOS, סינכרוני לגמרי)
-    var ok = false;
-    try {
-      var ta = document.createElement('textarea');
-      ta.value = text;
-      ta.setAttribute('readonly','');
-      ta.style.cssText = 'position:fixed;top:0;left:0;opacity:0;font-size:16px';
-      document.body.appendChild(ta);
-      ta.focus(); ta.select(); ta.setSelectionRange(0, text.length);
-      ok = document.execCommand('copy');
-      document.body.removeChild(ta);
-    } catch(e){}
-    if(ok){ done(); return; }
-    // שיטה 2: Clipboard API
-    if(navigator.clipboard && navigator.clipboard.writeText){
-      navigator.clipboard.writeText(text).then(done, function(){ toast('ההעתקה נכשלה'); });
-    } else toast('ההעתקה נכשלה');
-  }
-
-  function esc(s){ return s.replace(/[&<>"]/g, function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]}); }
-
-  function row(i){
-    return '<div class="item'+(i.pin?' pin':'')+'" data-id="'+i.id+'">' +
-      '<div class="txt" data-a="copy">'+esc(i.t)+'</div>' +
-      '<div class="side"><button data-a="pin" class="'+(i.pin?'on':'')+'" aria-label="הצמד">📌</button>' +
-      '<button data-a="del" aria-label="מחק">🗑</button></div></div>';
-  }
-
-  function render(){
-    var term = q.value.trim().toLowerCase();
-    var f = items.filter(function(i){return !term || i.t.toLowerCase().indexOf(term) > -1});
-    var pinned = f.filter(function(i){return i.pin}).sort(function(a,b){return b.ts-a.ts});
-    var recent = f.filter(function(i){return !i.pin}).sort(function(a,b){return b.ts-a.ts});
-    var html = '';
-    if(pinned.length) html += '<div class="sec-title">מוצמדים</div>' + pinned.map(row).join('');
-    if(recent.length) html += '<div class="sec-title">אחרונים</div>' + recent.map(row).join('');
-    if(!html) html = '<div class="empty">'+(items.length ? 'לא נמצאו תוצאות' : 'עדיין ריק.<br>העתק משהו באייפון, פתח את הדף<br>ולחץ "הדבק מהלוח".')+'</div>';
-    list.innerHTML = html;
-    $('count').textContent = items.length + ' פריטים';
-  }
-
-  list.addEventListener('click', function(e){
-    var btn = e.target.closest('[data-a]'); if(!btn) return;
-    var id = btn.closest('.item').getAttribute('data-id');
-    var it = items.find(function(i){return i.id === id}); if(!it) return;
-    var a = btn.getAttribute('data-a');
-    if(a === 'copy'){ copy(it.t); it.ts = Date.now(); save(); }
-    else if(a === 'pin'){ it.pin = !it.pin; save(); render(); }
-    else if(a === 'del'){ items = items.filter(function(i){return i.id !== id}); save(); render(); }
   });
+  var pinned = f.filter(function(i){ return i.pin; }).sort(function(a,b){ return b.ts - a.ts; });
+  var recent = f.filter(function(i){ return !i.pin; }).sort(function(a,b){ return b.ts - a.ts; });
 
-  $('pasteBtn').addEventListener('click', function(){
-    if(navigator.clipboard && navigator.clipboard.readText){
-      navigator.clipboard.readText().then(function(t){
-        if(add(t)) toast('נשמר ✓'); else toast('הלוח ריק');
-      }, function(){
-        toast('אשר "הדבק" או השתמש ב"ידני"');
-        showManual();
-      });
-    } else showManual();
-  });
-
-  function showManual(){
-    var m = $('manual'); m.hidden = false; m.focus();
+  var html = '';
+  if(!items.length){
+    html = emptyState();
+  } else if(!f.length){
+    html = '<div class="empty"><h2>לא נמצא כלום</h2><p>נסה מילה אחרת או נקה את הסינון.</p></div>';
+  } else {
+    if(filter === 'all' && pinned.length && recent.length){
+      html += '<div class="sec">'+svg('pin')+'מוצמדים</div>' + pinned.map(card).join('');
+      html += '<div class="sec">'+svg('zap')+'אחרונים</div>' + recent.map(card).join('');
+    } else {
+      html += pinned.concat(recent).map(card).join('');
+    }
   }
-  $('manualBtn').addEventListener('click', function(){
-    var m = $('manual'); m.hidden = !m.hidden; if(!m.hidden) m.focus();
-  });
-  $('manual').addEventListener('input', function(){
-    var m = this;
-    if(m.value.trim()){ add(m.value); m.value = ''; toast('נשמר ✓'); }
-  });
+  listEl.innerHTML = html;
+  $('foot').textContent = items.length ? 'הנתונים נשמרים במכשיר שלך בלבד' : '';
+}
 
-  q.addEventListener('input', render);
-  $('clearBtn').addEventListener('click', function(){
-    if(!confirm('למחוק את כל הפריטים שאינם מוצמדים?')) return;
-    items = items.filter(function(i){return i.pin}); save(); render();
-  });
+function card(i){
+  var t = typeOf(i), T = TYPES[t], body;
+  if(t === 'link'){
+    var u = hostOf(i.t);
+    body = '<div class="txt"><b>'+esc(u.h)+'</b>'+esc(u.r.length > 60 ? u.r.slice(0,60)+'…' : u.r)+'</div>';
+  } else {
+    body = '<div class="txt">'+esc(i.t.length > 400 ? i.t.slice(0,400)+'…' : i.t)+'</div>';
+  }
+  var extra = (t === 'text' || t === 'code') ? '<i></i><span>'+i.t.length+' תווים</span>' : '';
+  var copied = copiedId === i.id;
+  return '<article class="card t-'+t+(i.pin?' pin':'')+(copied?' copied':'')+'" data-id="'+i.id+'">' +
+    '<button class="main" data-a="copy"><div class="badge">'+svg(copied ? 'check' : T.ic)+'</div>' +
+    '<div class="body">'+body+'<div class="meta"><span>'+T.one+'</span><i></i><span>'+ago(i.ts)+'</span>'+extra+'</div></div></button>' +
+    '<div class="acts"><button data-a="pin" class="'+(i.pin?'on':'')+'" aria-label="הצמד">'+svg('pin')+'</button>' +
+    '<button data-a="more" aria-label="עוד">'+svg('more')+'</button></div></article>';
+}
 
-  // כשחוזרים לדף מאפליקציה אחרת, אפשר לנסות לקלוט אוטומטית (iOS ישאל אישור)
+function emptyState(){
+  return '<div class="empty">' +
+    '<img class="art" src="icon-512.png" alt="">' +
+    '<h2>עוד אין העתקות</h2><p>כל מה שתעתיק באייפון יישמר כאן, ותוכל להדביק אותו שוב בנגיעה אחת.</p>' +
+    '<div class="steps">' +
+    '<div><b>1</b>מעתיקים משהו בכל אפליקציה</div>' +
+    '<div><b>2</b>פותחים את לוח ההדבקה ולוחצים "הדבק מהלוח"</div>' +
+    '<div><b>3</b>בפעם הבאה מקישים על הפריט ומדביקים איפה שרוצים</div>' +
+    '</div></div>';
+}
+
+/* ---------- Toast ---------- */
+function toast(msg, icon, action){
+  toastEl.innerHTML = (icon ? svg(icon) : '') + '<span>'+esc(msg)+'</span>' + (action ? '<button data-a="'+action.a+'">'+esc(action.label)+'</button>' : '');
+  toastEl.classList.add('show');
+  clearTimeout(toastT);
+  toastT = setTimeout(function(){ toastEl.classList.remove('show'); }, action ? 4500 : 1800);
+}
+
+/* ---------- Sheets ---------- */
+function openSheet(html){
+  sheetBody.innerHTML = html;
+  hydrateIcons(sheetBody);
+  overlay.classList.add('show'); sheet.classList.add('show');
+  sheet.scrollTop = 0;
+}
+function closeSheet(){ overlay.classList.remove('show'); sheet.classList.remove('show'); current = null; document.activeElement && document.activeElement.blur && document.activeElement.blur(); }
+
+function row(a, ic, label, extra, cls){
+  return '<button class="row '+(cls||'')+'" data-a="'+a+'">'+svg(ic)+'<span>'+label+'</span>'+(extra||'')+'</button>';
+}
+
+function itemSheet(it){
+  current = it.id;
+  var t = typeOf(it), rows = '';
+  rows += row('copyS', 'copy', 'העתק');
+  if(t === 'link') rows += row('open', 'external', 'פתח קישור');
+  if(t === 'phone') rows += row('open', 'phone', 'התקשר');
+  if(t === 'email') rows += row('open', 'mail', 'שלח מייל');
+  rows += row('edit', 'edit', 'ערוך');
+  rows += row('shareS', 'share', 'שתף');
+  rows += row('pinS', 'pin', it.pin ? 'בטל הצמדה' : 'הצמד לראש');
+  rows += row('delS', 'trash', 'מחק', '', 'danger');
+  openSheet('<div class="sh-prev">'+esc(it.t.length > 300 ? it.t.slice(0,300)+'…' : it.t)+'</div><div class="list">'+rows+'</div>');
+}
+
+function editSheet(it){
+  current = it.id;
+  openSheet('<div class="sh-h"><h3>עריכה</h3></div><textarea class="big" id="editTa">'+esc(it.t)+'</textarea><button class="cta" data-a="saveEdit">שמור שינויים</button>');
+  setTimeout(function(){ var ta = $('editTa'); if(ta){ ta.focus(); } }, 380);
+}
+
+function manualSheet(msg){
+  openSheet('<div class="sh-h"><h3>הוספה ידנית</h3></div>' +
+    (msg ? '<p class="note" style="margin:0 2px 10px">'+msg+'</p>' : '') +
+    '<textarea class="big" id="manualTa" placeholder="לחיצה ארוכה ← הדבק, או פשוט הקלד"></textarea><button class="cta" data-a="saveManual">שמור</button>');
+  setTimeout(function(){ var ta = $('manualTa'); if(ta) ta.focus(); }, 380);
+}
+
+function seg(group, opts, cur){
+  return '<div class="seg">' + opts.map(function(o){ return '<button data-a="'+group+'" data-v="'+o[0]+'" class="'+(String(cur)===String(o[0])?'on':'')+'">'+o[1]+'</button>'; }).join('') + '</div>';
+}
+function settingsSheet(){
+  openSheet(
+    '<div class="sh-h"><h3>הגדרות</h3><button class="iconbtn" data-a="close" aria-label="סגור">'+svg('x')+'</button></div>' +
+    '<div class="list">' +
+      '<div class="row">'+svg('moon')+'<span>מראה</span>'+seg('theme',[['auto','אוטו׳'],['dark','כהה'],['light','בהיר']],settings.theme)+'</div>' +
+      '<div class="row">'+svg('layers')+'<span>כמות לשמירה</span>'+seg('max',[[25,'25'],[50,'50'],[100,'100']],settings.max)+'</div>' +
+      '<button class="row" data-a="auto">'+svg('zap')+'<span>קליטה בפתיחה</span><span class="sw '+(settings.auto?'on':'')+'"></span></button>' +
+    '</div>' +
+    '<p class="note">קליטה בפתיחה: בכל פעם שחוזרים לאפליקציה היא תנסה לשמור את מה שהועתק. iOS יבקש לאשר "הדבק" בכל פעם.</p>' +
+    '<div class="label">גיבוי</div>' +
+    '<div class="list">' +
+      row('backup','download','העתק גיבוי ללוח','<small>'+items.length+' פריטים</small>') +
+      row('restore','upload','שחזר מגיבוי') +
+    '</div>' +
+    '<div class="label">אזור זהירות</div>' +
+    '<div class="list">'+row('clearAll','trash','מחק הכל (חוץ מהמוצמדים)','','danger')+'</div>'
+  );
+}
+function restoreSheet(){
+  openSheet('<div class="sh-h"><h3>שחזור מגיבוי</h3></div><p class="note" style="margin:0 2px 10px">הדבק כאן את טקסט הגיבוי. הפריטים יתווספו לקיימים.</p><textarea class="big" id="restoreTa" placeholder="הדבק גיבוי"></textarea><button class="cta sec2" data-a="restorePaste">הדבק מהלוח</button><button class="cta" data-a="doRestore">שחזר</button>');
+}
+
+/* ---------- Actions ---------- */
+function pasteFromClipboard(){
+  if(navigator.clipboard && navigator.clipboard.readText){
+    navigator.clipboard.readText().then(function(t){
+      var r = add(t);
+      if(r === 'added') toast('נשמר', 'check');
+      else if(r === 'bumped') toast('כבר קיים, עלה לראש', 'check');
+      else toast('הלוח ריק');
+    }, function(){
+      manualSheet('iOS לא אישר גישה ללוח. הקש "הדבק" כשהוא מופיע, או הדבק כאן ידנית.');
+    });
+  } else manualSheet();
+}
+
+function applyTheme(){
+  var r = document.documentElement;
+  if(settings.theme === 'auto') r.removeAttribute('data-theme'); else r.setAttribute('data-theme', settings.theme);
+  var light = settings.theme === 'light' || (settings.theme === 'auto' && window.matchMedia && matchMedia('(prefers-color-scheme: light)').matches);
+  $('themeColor').setAttribute('content', light ? '#f3f4fa' : '#0b0d14');
+}
+
+function act(a, v, el){
+  var it = current ? byId(current) : null;
+  var card = el.closest ? el.closest('.card') : null;
+  var cardItem = card ? byId(card.getAttribute('data-id')) : null;
+  switch(a){
+    case 'paste': pasteFromClipboard(); break;
+    case 'manual': manualSheet(); break;
+    case 'settings': settingsSheet(); break;
+    case 'close': closeSheet(); break;
+    case 'filter': filter = v; render(); break;
+    case 'copy': if(cardItem) doCopy(cardItem); break;
+    case 'pin': if(cardItem){ cardItem.pin = !cardItem.pin; save(); render(); toast(cardItem.pin ? 'הוצמד לראש' : 'ההצמדה בוטלה', 'check'); } break;
+    case 'more': if(cardItem) itemSheet(cardItem); break;
+    case 'copyS': if(it){ var x = it; closeSheet(); doCopy(x); } break;
+    case 'pinS': if(it){ it.pin = !it.pin; save(); closeSheet(); render(); toast(it.pin ? 'הוצמד לראש' : 'ההצמדה בוטלה', 'check'); } break;
+    case 'edit': if(it) editSheet(it); break;
+    case 'saveEdit':
+      if(it){ var val = $('editTa').value.replace(/\s+$/,''); if(val.trim()){ it.t = val; it.ts = Date.now(); save(); closeSheet(); render(); toast('עודכן', 'check'); } else toast('אי אפשר לשמור ריק'); }
+      break;
+    case 'saveManual':
+      var m = $('manualTa').value; var r = add(m);
+      if(r === 'empty'){ toast('אין מה לשמור'); } else { closeSheet(); toast(r === 'added' ? 'נשמר' : 'כבר קיים, עלה לראש', 'check'); }
+      break;
+    case 'shareS':
+      if(it){
+        if(navigator.share){ navigator.share({text: it.t}).catch(function(){}); }
+        else { var y = it; closeSheet(); doCopy(y); }
+      }
+      break;
+    case 'open':
+      if(it){
+        var t = typeOf(it), s = it.t.trim();
+        if(t === 'link') window.open(linkUrl(s), '_blank', 'noopener');
+        else if(t === 'phone') location.href = 'tel:' + s.replace(/[^\d+]/g,'');
+        else if(t === 'email') location.href = 'mailto:' + s;
+      }
+      break;
+    case 'delS':
+      if(it){
+        lastDeleted = {item: it, idx: items.indexOf(it)};
+        items = items.filter(function(i){ return i.id !== it.id; });
+        save(); closeSheet(); render();
+        toast('נמחק', 'trash', {a:'undo', label:'בטל'});
+      }
+      break;
+    case 'undo':
+      if(lastDeleted){ items.push(lastDeleted.item); lastDeleted = null; save(); render(); toast('שוחזר', 'check'); }
+      break;
+    case 'theme': settings.theme = v; saveSettings(); applyTheme(); settingsSheet(); break;
+    case 'max': settings.max = +v; saveSettings(); trim(); save(); render(); settingsSheet(); break;
+    case 'auto': settings.auto = !settings.auto; saveSettings(); settingsSheet(); break;
+    case 'backup':
+      copyText(JSON.stringify({app:'clip-board', v:1, items: items})).then(function(ok){ toast(ok ? 'הגיבוי הועתק ללוח' : 'ההעתקה נכשלה', ok ? 'check' : null); });
+      break;
+    case 'restore': restoreSheet(); break;
+    case 'restorePaste':
+      if(navigator.clipboard && navigator.clipboard.readText){ navigator.clipboard.readText().then(function(t){ $('restoreTa').value = t; }, function(){ toast('הדבק ידנית בתיבה'); }); }
+      break;
+    case 'doRestore':
+      try {
+        var d = JSON.parse($('restoreTa').value), list = Array.isArray(d) ? d : d.items, n = 0;
+        if(!Array.isArray(list)) throw new Error('bad');
+        list.forEach(function(o){
+          if(o && typeof o.t === 'string' && o.t.trim() && !items.some(function(i){ return i.t === o.t; })){
+            items.push({id: uid(), t: o.t, ts: +o.ts || Date.now(), pin: !!o.pin}); n++;
+          }
+        });
+        trim(); save(); closeSheet(); render(); toast('שוחזרו ' + n + ' פריטים', 'check');
+      } catch(e){ toast('הגיבוי לא תקין'); }
+      break;
+    case 'clearAll':
+      if(confirm('למחוק את כל הפריטים שאינם מוצמדים?')){ items = items.filter(function(i){ return i.pin; }); save(); closeSheet(); render(); toast('נוקה', 'check'); }
+      break;
+    case 'dismissHint': settings.hint = true; saveSettings(); $('bannerSlot').innerHTML = ''; break;
+  }
+}
+
+document.addEventListener('click', function(e){
+  var el = e.target.closest ? e.target.closest('[data-a]') : null;
+  if(!el) return;
+  if(el.id === 'overlay' && e.target !== overlay) return;
+  act(el.getAttribute('data-a'), el.getAttribute('data-v'), el);
+});
+
+/* long-press על כרטיס פותח את התפריט */
+(function(){
+  var timer = null, sx = 0, sy = 0;
+  listEl.addEventListener('touchstart', function(e){
+    var c = e.target.closest('.card'); if(!c || e.target.closest('.acts')) return;
+    var t = e.touches[0]; sx = t.clientX; sy = t.clientY;
+    timer = setTimeout(function(){ var it = byId(c.getAttribute('data-id')); if(it){ timer = 'fired'; itemSheet(it); } }, 480);
+  }, {passive:true});
+  listEl.addEventListener('touchmove', function(e){ var t = e.touches[0]; if(Math.abs(t.clientX-sx) > 8 || Math.abs(t.clientY-sy) > 8){ clearTimeout(timer); timer = null; } }, {passive:true});
+  listEl.addEventListener('touchend', function(e){ if(timer === 'fired'){ e.preventDefault(); } clearTimeout(timer); timer = null; });
+  listEl.addEventListener('contextmenu', function(e){ if(e.target.closest('.card')) e.preventDefault(); });
+})();
+
+$('q').addEventListener('input', function(){ query = this.value; render(); });
+
+/* header shadow on scroll */
+window.addEventListener('scroll', function(){ $('top').classList.toggle('scrolled', window.scrollY > 4); }, {passive:true});
+
+/* רענון זמנים + קליטה אוטומטית כשחוזרים לאפליקציה */
+document.addEventListener('visibilitychange', function(){
+  if(document.visibilityState !== 'visible') return;
   render();
+  if(settings.auto && navigator.clipboard && navigator.clipboard.readText){
+    navigator.clipboard.readText().then(function(t){ if(add(t) === 'added') toast('נקלט מהלוח', 'check'); }, function(){});
+  }
+});
+setInterval(function(){ if(document.visibilityState === 'visible' && !sheet.classList.contains('show')) render(); }, 60000);
+
+/* באנר התקנה לאייפון */
+function installHint(){
+  var ios = /iphone|ipad|ipod/i.test(navigator.userAgent);
+  var standalone = window.navigator.standalone || (window.matchMedia && matchMedia('(display-mode: standalone)').matches);
+  if(!ios || standalone || settings.hint) return;
+  $('bannerSlot').innerHTML = '<div class="banner"><div class="bi">'+svg('share')+'</div><p><b>התקן כאפליקציה</b>לחץ על כפתור השיתוף בדפדפן ואז "הוסף למסך הבית".</p><button class="x" data-a="dismissHint" aria-label="סגור">'+svg('x')+'</button></div>';
+}
+
+/* Service worker */
+if('serviceWorker' in navigator && /^https?:$/.test(location.protocol)){
+  window.addEventListener('load', function(){ navigator.serviceWorker.register('sw.js').catch(function(){}); });
+}
+
+/* init */
+hydrateIcons(); applyTheme(); render(); installHint();
+if(window.matchMedia) try { matchMedia('(prefers-color-scheme: light)').addEventListener('change', applyTheme); } catch(e){}
 })();
 </script>
 </body>
